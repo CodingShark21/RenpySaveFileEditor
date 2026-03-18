@@ -134,7 +134,7 @@ pub fn update_variable_in_save(
     let bytes = fs::read(file_path)
         .map_err(|e| format!("Failed to read file: {}", e))?;
 
-    let mut data: serde_json::Value = match serde_pickle::from_slice(&bytes, DeOptions::default()) {
+    let mut data: serde_json::Value = match serde_pickle::from_slice::<serde_json::Value>(&bytes, DeOptions::default()) {
         Ok(val) => match serde_json::to_value(val) {
             Ok(json_val) => json_val,
             Err(_) => return Err("Failed to convert to JSON".to_string()),
