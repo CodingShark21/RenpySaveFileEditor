@@ -1,0 +1,67 @@
+/* CSS for App component */
+.app-header {
+  background: linear-gradient(135deg, #646cff 0%, #535bf2 100%);
+  padding: 1.5rem;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.8em;
+}
+
+.app-main {
+  flex: 1;
+  overflow: auto;
+  padding: 2rem;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+}
+
+.editor-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 6px;
+}
+
+.file-path {
+  margin: 0;
+  opacity: 0.8;
+  word-break: break-all;
+}
+
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  opacity: 0.6;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.error-banner {
+  background-color: rgba(255, 100, 100, 0.2);
+  border: 1px solid #ff6464;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: #ff9999;
+}

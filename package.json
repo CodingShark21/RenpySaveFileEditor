@@ -1,0 +1,29 @@
+{
+  "name": "renpysavefileeditor",
+  "version": "1.0.0",
+  "description": "Renpy Save File Editor - Edit variables in .save files",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "vite build",
+    "build:all": "npm run build && tauri build",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": ["renpy", "save", "editor", "game"],
+  "author": "ksdsn",
+  "license": "MIT",
+  "type": "commonjs",
+  "devDependencies": {
+    "@tauri-apps/api": "^2.10.1",
+    "@tauri-apps/cli": "^2.10.1",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.0"
+  }
+}
