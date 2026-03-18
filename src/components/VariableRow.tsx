@@ -1,126 +1,68 @@
-import { ChangeEvent, useState } from 'react'
 import { Variable } from '../types'
+import './VariableRow.css'
 
 interface VariableRowProps {
   variable: Variable
-  onchange: (variable: Variable) => void
-  disabled: boolean
+  isEditing: boolean
+  editingValue: string
+  onEditChange: (value: string) => void
+  onEditClick: () => void
+  onSave: () => Promise<void>
+  onCancel: () => void
+  isSaving: boolean
 }
 
-export default function VariableRow({ variable, onchange, disabled }: VariableRowProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [editValue, setEditValue] = useState(String(variable.value))
-  const [error, setError] = useState('')
-
-  const handleEditClick = () => {
-    setIsEditing(true)
-    setEditValue(String(variable.value))
-    setError('')
-  }
-
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setEditValue(e.target.value)
-    setError('')
-  }
-
-  const validateAndSave = () => {
-    let parsedValue: number | string = editValue
-
-    // Type validation
-    if (variable.type === 'int') {
-      const parsed = parseInt(editValue, 10)
-      if (isNaN(parsed)) {
-        setError('Invalid integer')
-        return
-      }
-      parsedValue = parsed
-    } else if (variable.type === 'float') {
-      const parsed = parseFloat(editValue)
-      if (isNaN(parsed)) {
-        setError('Invalid float')
-        return
-      }
-      parsedValue = parsed
-    }
-
-    onchange({
-      ...variable,
-      value: parsedValue,
-    })
-    setIsEditing(false)
-  }
-
-  const handleCancel = () => {
-    setIsEditing(false)
-    setError('')
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      validateAndSave()
-    } else if (e.key === 'Escape') {
-      handleCancel()
-    }
-  }
-
+export default function VariableRow({
+  variable,
+  isEditing,
+  editingValue,
+  onEditChange,
+  onEditClick,
+  onSave,
+  onCancel,
+  isSaving,
+}: VariableRowProps) {
   return (
-    <div className="variable-row">
-      <div className="col-name">
-        <span className="var-name">{variable.name}</span>
-        {variable.scope && <span className="var-scope">({variable.scope})</span>}
+    <div className={`variable-row ${isEditing ? 'editing' : ''}`}>
+      <div className="variable-info">
+        <div className="variable-name">{variable.name}</div>
+        <div className="variable-type">{variable.type}</div>
       </div>
 
-      <div className="col-type">
-        <span className={`type-badge type-${variable.type}`}>{variable.type}</span>
-      </div>
-
-      <div className="col-value">
-        {isEditing ? (
-          <div className="edit-input-group">
-            <input
-              type="text"
-              value={editValue}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyPress}
-              autoFocus
-              disabled={disabled}
-              className={`edit-input ${error ? 'error' : ''}`}
-            />
-            {error && <span className="error-text">{error}</span>}
-          </div>
-        ) : (
-          <span className="var-value">{variable.value}</span>
-        )}
-      </div>
-
-      <div className="col-actions">
-        {isEditing ? (
-          <>
+      {isEditing ? (
+        <div className="variable-edit">
+          <input
+            type="text"
+            value={editingValue}
+            onChange={(e) => onEditChange(e.target.value)}
+            className="edit-input"
+            autoFocus
+          />
+          <div className="edit-actions">
             <button
-              onClick={validateAndSave}
-              className="btn btn-small btn-primary"
-              disabled={disabled}
+              onClick={onSave}
+              disabled={isSaving}
+              className="save-btn"
             >
-              Save
+              {isSaving ? 'Saving...' : 'Save'}
             </button>
             <button
-              onClick={handleCancel}
-              className="btn btn-small btn-secondary"
-              disabled={disabled}
+              onClick={onCancel}
+              disabled={isSaving}
+              className="cancel-btn"
             >
               Cancel
             </button>
-          </>
-        ) : (
-          <button
-            onClick={handleEditClick}
-            className="btn btn-small btn-primary"
-            disabled={disabled}
-          >
+          </div>
+        </div>
+      ) : (
+        <div className="variable-display">
+          <div className="variable-value">{variable.value}</div>
+          <button onClick={onEditClick} className="edit-btn" title="Edit variable">
             Edit
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

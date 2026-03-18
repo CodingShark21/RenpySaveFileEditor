@@ -1,90 +1,107 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
+import { invoke } from '@tauri-apps/api/tauri'
 import { Variable } from '../types'
+import SearchBar from './SearchBar'
 import VariableRow from './VariableRow'
+import { fuzzySearch } from '../utils/search'
+import './VariableEditor.css'
 
 interface VariableEditorProps {
   variables: Variable[]
+  filePath: string
   onVariableChange: (variable: Variable) => void
-  isLoading: boolean
 }
 
 export default function VariableEditor({
   variables,
+  filePath,
   onVariableChange,
-  isLoading,
 }: VariableEditorProps) {
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [editingName, setEditingName] = useState<string | null>(null)
+  const [editingValue, setEditingValue] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
-  // Fuzzy search implementation
-  const filteredVariables = useMemo(() => {
-    if (!searchTerm.trim()) return variables
+  const filteredVariables = searchQuery
+    ? fuzzySearch(variables, searchQuery)
+    : variables
 
-    const term = searchTerm.toLowerCase()
-    return variables.filter((variable) => {
-      const name = variable.name.toLowerCase()
-      const value = String(variable.value).toLowerCase()
+  const handleEditClick = (variable: Variable) => {
+    setEditingName(variable.name)
+    setEditingValue(variable.value)
+    setError('')
+  }
 
-      // Simple fuzzy search: check if all characters in searchTerm appear in order
-      let nameIndex = 0
-      for (let i = 0; i < term.length; i++) {
-        nameIndex = name.indexOf(term[i], nameIndex)
-        if (nameIndex === -1) {
-          // Try matching against value
-          let valueIndex = 0
-          for (let j = i; j < term.length; j++) {
-            valueIndex = value.indexOf(term[j], valueIndex)
-            if (valueIndex === -1) return false
-            valueIndex++
-          }
-          return true
-        }
-        nameIndex++
+  const handleSave = async () => {
+    if (!editingName) return
+
+    setSaving(true)
+    setError('')
+
+    try {
+      await invoke('update_variable', {
+        varName: editingName,
+        newValue: editingValue,
+      })
+
+      const updatedVar = variables.find((v) => v.name === editingName)
+      if (updatedVar) {
+        onVariableChange({
+          ...updatedVar,
+          value: editingValue,
+        })
       }
-      return true
-    })
-  }, [variables, searchTerm])
+
+      setEditingName(null)
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err)
+      setError(`Failed to save: ${errorMsg}`)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCancel = () => {
+    setEditingName(null)
+    setEditingValue('')
+    setError('')
+  }
 
   return (
     <div className="variable-editor">
-      <div className="search-container">
-        <input
-          type="text"
-          placeholder="Search variables (fuzzy search)..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          disabled={isLoading}
-          className="search-input"
-        />
-        <span className="search-info">
-          {filteredVariables.length} / {variables.length} variables
-        </span>
+      <div className="editor-header">
+        <h2>Variables ({filteredVariables.length})</h2>
+        {filePath && <p className="file-path">Loaded: {filePath}</p>}
       </div>
 
-      <div className="variables-table">
-        <div className="table-header">
-          <div className="col-name">Variable Name</div>
-          <div className="col-type">Type</div>
-          <div className="col-value">Value</div>
-          <div className="col-actions">Actions</div>
-        </div>
+      <SearchBar value={searchQuery} onChange={setSearchQuery} />
 
-        <div className="table-body">
-          {filteredVariables.length > 0 ? (
-            filteredVariables.map((variable) => (
-              <VariableRow
-                key={variable.name}
-                variable={variable}
-                onchange={onVariableChange}
-                disabled={isLoading}
-              />
-            ))
-          ) : (
-            <div className="no-results">
-              {searchTerm ? 'No variables match your search' : 'No variables found'}
-            </div>
-          )}
+      {error && <div className="error-message">{error}</div>}
+
+      {filteredVariables.length === 0 ? (
+        <div className="no-results">
+          {searchQuery
+            ? 'No variables match your search'
+            : 'No variables loaded'}
         </div>
-      </div>
+      ) : (
+        <div className="variables-list">
+          {filteredVariables.map((variable) => (
+            <VariableRow
+              key={variable.name}
+              variable={variable}
+              isEditing={editingName === variable.name}
+              editingValue={editingValue}
+              onEditChange={setEditingValue}
+              onEditClick={() => handleEditClick(variable)}
+              onSave={handleSave}
+              onCancel={handleCancel}
+              isSaving={saving}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react'
-import { invoke } from '@tauri-apps/api/tauri'
 import FileLoader from './components/FileLoader'
 import VariableEditor from './components/VariableEditor'
 import { Variable } from './types'
@@ -11,19 +10,14 @@ function App() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string>('')
 
-  const handleFileLoad = useCallback(async (path: string) => {
-    setIsLoading(true)
-    setError('')
-    try {
-      const vars = await invoke<Variable[]>('load_save_file', { path })
-      setVariables(vars)
+  const handleFileLoaded = useCallback(
+    (loadedVariables: Variable[], path: string) => {
+      setVariables(loadedVariables)
       setFilePath(path)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
+      setError('')
+    },
+    []
+  )
 
   const handleVariableChange = useCallback((updatedVariable: Variable) => {
     setVariables((prev) =>
@@ -31,73 +25,58 @@ function App() {
     )
   }, [])
 
-  const handleSave = useCallback(async () => {
-    if (!filePath) return
-    setIsLoading(true)
+  const handleLoadNewFile = () => {
+    setFilePath('')
+    setVariables([])
     setError('')
-    try {
-      await invoke('save_file', { path: filePath, variables })
-      alert('File saved successfully!')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
-    } finally {
-      setIsLoading(false)
-    }
-  }, [filePath, variables])
-
-  const handleExport = useCallback(async () => {
-    if (variables.length === 0) return
-    try {
-      const json = JSON.stringify(variables, null, 2)
-      await invoke('export_variables', { data: json })
-      alert('Variables exported successfully!')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
-    }
-  }, [variables])
+  }
 
   return (
     <div className="app">
       <header className="app-header">
         <h1>Renpy Save File Editor</h1>
+        <p className="subtitle">Edit game variables in your save files</p>
       </header>
 
       <main className="app-main">
         {error && <div className="error-banner">{error}</div>}
 
         {!filePath ? (
-          <FileLoader onFileLoad={handleFileLoad} isLoading={isLoading} />
+          <div className="loader-container">
+            <FileLoader onFileLoaded={handleFileLoaded} isLoading={isLoading} />
+          </div>
         ) : (
           <div className="editor-container">
-            <div className="editor-header">
-              <p className="file-path">File: {filePath}</p>
-              <button onClick={() => setFilePath('')} className="btn btn-secondary">
+            <div className="top-bar">
+              <div className="file-info">
+                <p className="file-path">{filePath}</p>
+              </div>
+              <button
+                onClick={handleLoadNewFile}
+                className="btn btn-secondary"
+              >
                 Load Different File
               </button>
             </div>
 
             {variables.length > 0 ? (
-              <>
-                <VariableEditor
-                  variables={variables}
-                  onVariableChange={handleVariableChange}
-                  isLoading={isLoading}
-                />
-                <div className="action-buttons">
-                  <button onClick={handleSave} className="btn btn-primary" disabled={isLoading}>
-                    Save Changes
-                  </button>
-                  <button onClick={handleExport} className="btn btn-secondary" disabled={isLoading}>
-                    Export as JSON
-                  </button>
-                </div>
-              </>
+              <VariableEditor
+                variables={variables}
+                filePath={filePath}
+                onVariableChange={handleVariableChange}
+              />
             ) : (
-              <div className="empty-state">No variables found in this file</div>
+              <div className="empty-state">
+                <p>No variables found in this file</p>
+              </div>
             )}
           </div>
         )}
       </main>
+
+      <footer className="app-footer">
+        <p>Renpy Save File Editor v1.0</p>
+      </footer>
     </div>
   )
 }

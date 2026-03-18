@@ -1,63 +1,55 @@
-import { ChangeEvent, useState } from 'react'
+import { useState } from 'react'
+import { open } from '@tauri-apps/api/dialog'
+import { invoke } from '@tauri-apps/api/tauri'
+import { Variable } from '../types'
+import './FileLoader.css'
 
 interface FileLoaderProps {
-  onFileLoad: (path: string) => void
+  onFileLoaded: (variables: Variable[], filePath: string) => void
   isLoading: boolean
 }
 
-export default function FileLoader({ onFileLoad, isLoading }: FileLoaderProps) {
-  const [filePath, setFilePath] = useState('')
+export default function FileLoader({ onFileLoaded, isLoading }: FileLoaderProps) {
+  const [error, setError] = useState<string>('')
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setFilePath(e.target.value)
-  }
+  const handleSelectFile = async () => {
+    try {
+      const selected = await open({
+        filters: [
+          {
+            name: 'Renpy Save Files',
+            extensions: ['save'],
+          },
+          {
+            name: 'All Files',
+            extensions: ['*'],
+          },
+        ],
+      })
 
-  const handleLoadClick = () => {
-    if (filePath.trim()) {
-      onFileLoad(filePath)
-    }
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleLoadClick()
+      if (selected && typeof selected === 'string') {
+        setError('')
+        const variables = await invoke<Variable[]>('load_save_file', {
+          path: selected,
+        })
+        onFileLoaded(variables, selected)
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err)
+      setError(`Failed to load file: ${errorMsg}`)
     }
   }
 
   return (
     <div className="file-loader">
-      <div className="file-loader-content">
-        <h2>Load Renpy Save File</h2>
-        <p>Enter the path to your .save file</p>
-        
-        <div className="input-group">
-          <input
-            type="text"
-            value={filePath}
-            onChange={handleInputChange}
-            onKeyPress={handleKeyPress}
-            placeholder="e.g., C:\Games\MyGame\saves\slot_1.save"
-            disabled={isLoading}
-            className="file-input"
-          />
-          <button
-            onClick={handleLoadClick}
-            disabled={isLoading || !filePath.trim()}
-            className="btn btn-primary"
-          >
-            {isLoading ? 'Loading...' : 'Load File'}
-          </button>
-        </div>
-
-        <div className="file-loader-info">
-          <h3>ℹ️ How to find your save file:</h3>
-          <ul>
-            <li>Usually located in: <code>game_folder\game\saves\</code></li>
-            <li>Look for files named <code>slot_1.save</code>, <code>slot_2.save</code>, etc.</li>
-            <li>Paste the full path above to load it</li>
-          </ul>
-        </div>
-      </div>
+      <button
+        onClick={handleSelectFile}
+        disabled={isLoading}
+        className="file-loader-btn"
+      >
+        {isLoading ? 'Loading...' : 'Load Save File'}
+      </button>
+      {error && <div className="error-message">{error}</div>}
     </div>
   )
 }

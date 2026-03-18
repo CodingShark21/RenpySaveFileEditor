@@ -1,14 +1,15 @@
 export interface Variable {
-  name: string
-  value: number | string
-  type: 'int' | 'float' | 'str' | 'bool'
-  scope?: string
+  name: string;
+  value: string;
+  type: string;
 }
 
-export interface SaveFileData {
-  variables: Variable[]
-  metadata?: {
-    version?: string
-    timestamp?: string
-  }
+export interface AppContextType {
+  variables: Variable[];
+  filePath: string;
+  isLoading: boolean;
+  error: string;
+  loadFile: (path: string) => Promise<void>;
+  updateVariable: (name: string, value: string) => Promise<void>;
+  exportVariables: () => void;
 }

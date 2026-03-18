@@ -1,0 +1,25 @@
+.variable-editor {
+  padding: 1.5rem;
+}
+
+.editor-header {
+  margin-bottom: 1.5rem;
+}
+
+.editor-header h2 {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+}
+
+.variables-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.no-results {
+  text-align: center;
+  padding: 2rem;
+  color: #999;
+  font-size: 0.95rem;
+}

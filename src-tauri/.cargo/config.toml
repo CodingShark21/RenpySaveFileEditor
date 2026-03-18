@@ -1,0 +1,9 @@
+[build]
+target = "x86_64-pc-windows-gnu"
+
+[registries.crates-io]
+protocol = "sparse"
+
+[net]
+retry = 3
+git-fetch-with-cli = true

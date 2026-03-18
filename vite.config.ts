@@ -11,8 +11,12 @@ export default defineConfig(async () => ({
   },
   envPrefix: ['VITE_', 'TAURI_'],
   build: {
-    target: 'ES2021',
+    target: 'ES2020',
     minify: !process.env.TAURI_DEBUG,
     sourcemap: !!process.env.TAURI_DEBUG,
+    cssMinify: false,
+    rollupOptions: {
+      external: [/@tauri-apps\/.*/],
+    },
   },
 }))
