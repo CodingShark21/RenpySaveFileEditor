@@ -9,7 +9,7 @@ on:
 
 jobs:
   build-windows:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v4
@@ -18,37 +18,37 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
       
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: x86_64-pc-windows-msvc
+          targets: x86_64-pc-windows-gnu
       
-      - name: Setup Tauri
+      - name: Install MinGW
+        run: sudo apt-get update && sudo apt-get install -y mingw-w64
+      
+      - name: Install dependencies
         run: npm install --legacy-peer-deps
       
-      - name: Build Tauri App
-        run: npm run tauri build
+      - name: Build frontend
+        run: npm run build
+      
+      - name: Build Rust backend
+        run: cargo build --release --target x86_64-pc-windows-gnu
+        working-directory: src-tauri
         env:
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          CC: x86_64-w64-mingw32-gcc
+          AR: x86_64-w64-mingw32-ar
       
-      - name: Upload Windows MSI
+      - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
-          name: renpy-editor-windows
-          path: src-tauri/target/release/bundle/msi/
-          retention-days: 30
-      
-      - name: Upload Windows NSIS
-        uses: actions/upload-artifact@v4
-        with:
-          name: renpy-editor-nsis
-          path: src-tauri/target/release/bundle/nsis/
+          name: renpy-editor-exe-release
+          path: src-tauri/target/x86_64-pc-windows-gnu/release/app.exe
           retention-days: 30
 
   build-debug:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v4
@@ -57,21 +57,28 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
       
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-gnu
       
-      - name: Install Dependencies
+      - name: Install MinGW
+        run: sudo apt-get update && sudo apt-get install -y mingw-w64
+      
+      - name: Install dependencies
         run: npm install --legacy-peer-deps
       
       - name: Build Debug
-        run: cargo build
+        run: cargo build --target x86_64-pc-windows-gnu
         working-directory: src-tauri
+        env:
+          CC: x86_64-w64-mingw32-gcc
+          AR: x86_64-w64-mingw32-ar
       
       - name: Upload Debug Binary
         uses: actions/upload-artifact@v4
         with:
           name: renpy-editor-debug
-          path: src-tauri/target/debug/app.exe
+          path: src-tauri/target/x86_64-pc-windows-gnu/debug/app.exe
           retention-days: 7
